@@ -1,0 +1,64 @@
+// server.js
+const express = require('express');
+const http = require('http');
+const WebSocket = require('ws');
+const tf = require('@tensorflow/tfjs-node');
+
+const app = express();
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+let clients = new Set();
+let model;
+
+// Dummy load model (real style transfer would use trained model)
+async function loadModel() {
+    console.log("Model loaded (dummy)");
+    model = true; // Simulasi model sebagai 'loaded'
+}
+
+async function applyStyleTransfer(strokeData) {
+    if (!model) await loadModel();
+
+    // Dummy transform: simply offset the coordinates
+    return {
+        ...strokeData,
+        points: strokeData.points.map(([x, y]) => [x + Math.random() * 5, y + Math.random() * 5])
+    };
+}
+
+wss.on('connection', ws => {
+    clients.add(ws);
+    console.log("New client connected");
+
+    ws.on('message', async message => {
+        try {
+            let parsed = JSON.parse(message);
+
+            if (parsed.type === 'draw') {
+                const transformed = await applyStyleTransfer(parsed.strokeData);
+                broadcast({ type: 'draw', strokeData: transformed }, ws);
+            }
+        } catch (err) {
+            console.error("Failed to process message:", err);
+        }
+    });
+
+    ws.on('close', () => {
+        clients.delete(ws);
+        console.log("Client disconnected");
+    });
+});
+
+function broadcast(data, sender) {
+    const json = JSON.stringify(data);
+    for (let client of clients) {
+        if (client !== sender && client.readyState === WebSocket.OPEN) {
+            client.send(json);
+        }
+    }
+}
+
+server.listen(8080, () => {
+    console.log('🧠 NeuroCanvas server running on http://localhost:8080');
+});
