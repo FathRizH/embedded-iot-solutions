@@ -1,0 +1,137 @@
+#include <DHT.h>
+#include <Servo.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// === Pin Setup ===
+#define DHTPIN D4
+#define DHTTYPE DHT11
+#define RELAY_PIN D5
+#define SERVO_PIN D6
+#define BUZZER_PIN D7
+#define SOIL_PIN A0
+
+DHT dht(DHTPIN, DHTTYPE);
+Servo myServo;
+LiquidCrystal_I2C lcd(0x27, 16, 2); // Alamat I2C umum: 0x27 atau 0x3F
+
+void setup() {
+  Serial.begin(9600);
+  
+  dht.begin();
+  myServo.attach(SERVO_PIN);
+
+  pinMode(RELAY_PIN, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(SOIL_PIN, INPUT);
+
+  // Inisialisasi LCD
+  lcd.begin();
+  lcd.backlight();
+  lcd.setCursor(0,0);
+  lcd.print("Smart Farming");
+  delay(2000);
+  lcd.clear();
+}
+
+void loop() {
+  float temperature = dht.readTemperature();
+  float humidity = dht.readHumidity();
+  int soilValue = analogRead(SOIL_PIN); // 0 (basah) - 1023 (kering)
+
+  Serial.print("Temp: "); Serial.print(temperature);
+  Serial.print(" | Hum: "); Serial.print(humidity);
+  Serial.print(" | Soil: "); Serial.println(soilValue);
+
+  // === Tampilkan di LCD ===
+  lcd.setCursor(0, 0);
+  lcd.print("T:"); lcd.print(temperature); lcd.print(" H:"); lcd.print(humidity);
+  
+  lcd.setCursor(0, 1);
+  lcd.print("Soil:"); lcd.print(soilValue);
+
+  // === Logika: Jika tanah kering, aktifkan pompa ===
+  if (soilValue > 800) { // semakin tinggi = kering
+    digitalWrite(RELAY_PIN, HIGH); // Aktifkan pompa/aktuator
+    digitalWrite(BUZZER_PIN, HIGH); // Buzzer on
+    myServo.write(90); // Gerakkan servo
+    lcd.setCursor(12, 1);
+    lcd.print("DRY");
+  } else {
+    digitalWrite(RELAY_PIN, LOW);
+    digitalWrite(BUZZER_PIN, LOW);
+    myServo.write(0);
+    lcd.setCursor(12, 1);
+    lcd.print("WET");
+  }
+
+  delay(2000);
+}
+
+
+
+#include <DHT.h>
+#include <Servo.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// === Definisi Pin ===
+#define DHTPIN 2
+#define DHTTYPE DHT11
+#define RELAY_PIN 3
+#define SERVO_PIN 5
+#define BUZZER_PIN 6
+#define SOIL_PIN A0
+
+DHT dht(DHTPIN, DHTTYPE);
+Servo myServo;
+LiquidCrystal_I2C lcd(0x27, 16, 2); // Ganti ke 0x3F jika LCD tidak tampil
+
+void setup() {
+  Serial.begin(9600);
+  dht.begin();
+  myServo.attach(SERVO_PIN);
+
+  pinMode(RELAY_PIN, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(SOIL_PIN, INPUT);
+
+  lcd.begin();
+  lcd.backlight();
+  lcd.setCursor(0, 0);
+  lcd.print("Smart Farming");
+  delay(2000);
+  lcd.clear();
+}
+
+void loop() {
+  float temp = dht.readTemperature();
+  float humi = dht.readHumidity();
+  int soil = analogRead(SOIL_PIN); // Nilai 0 (basah) - 1023 (kering)
+
+  Serial.print("Temp: "); Serial.print(temp);
+  Serial.print(" | Humi: "); Serial.print(humi);
+  Serial.print(" | Soil: "); Serial.println(soil);
+
+  // === Tampilkan di LCD ===
+  lcd.setCursor(0, 0);
+  lcd.print("T:"); lcd.print(temp); lcd.print(" H:"); lcd.print(humi);
+
+  lcd.setCursor(0, 1);
+  lcd.print("Soil:"); lcd.print(soil);
+
+  // === Logika ===
+  if (soil > 800) {
+    digitalWrite(RELAY_PIN, HIGH);      // Pompa ON
+    digitalWrite(BUZZER_PIN, HIGH);     // Buzzer ON
+    myServo.write(90);                  // Servo buka
+    lcd.setCursor(12, 1); lcd.print("DRY");
+  } else {
+    digitalWrite(RELAY_PIN, LOW);       // Pompa OFF
+    digitalWrite(BUZZER_PIN, LOW);      // Buzzer OFF
+    myServo.write(0);                   // Servo tutup
+    lcd.setCursor(12, 1); lcd.print("WET");
+  }
+
+  delay(2000);
+}
