@@ -1,3 +1,6 @@
+Proyek ini merupakan implementasi sistem terdistribusi berbasis mikrokontroler yang dirancang untuk meningkatkan efisiensi dan keamanan melalui pemantauan lingkungan secara real-time. Dengan mengandalkan sensor-sensor digital dan analog, serta konektivitas internet melalui platform IoT, sistem ini mampu mengirim dan menerima data secara langsung dari perangkat ke pengguna. Tujuan utama dari proyek ini adalah untuk mengintegrasikan berbagai teknologi sensor dengan pengendalian otomatis yang dapat disesuaikan, sambil tetap menjaga fleksibilitas dalam skalabilitas dan penggunaan di berbagai skenario.
+
+
 //f
 🔌 Koneksi Pin:
 Komponen	Pin NodeMCU
@@ -52,3 +55,35 @@ flame (V0)
 gas (V1)
 temp (V2)
 statusPompa (V3)
+
+
+
+//f
+Fungsi	Widget	Tipe Datastream	Virtual Pin
+Temperatur	Gauge / Label	Float	V0
+Kelembaban	Gauge / Label	Float	V1
+Intensitas Cahaya (LDR)	Gauge / Label	Integer	V2
+Kelembaban Tanah (Soil)	Gauge / Label	Integer	V3
+Kontrol Relay Manual	Switch	Integer	V4
+
+Opsional: gunakan Notification widget jika ingin memberi notifikasi saat tanah kering.
+
+//h
+Fungsi	Widget	Tipe Datastream	Virtual Pin
+Temperatur	Gauge / Label	Float	V0
+Kelembaban	Gauge / Label	Float	V1
+Intensitas Cahaya (LDR)	Gauge / Label	Integer	V2
+Buka/Tutup Pintu (Servo)	Switch	Integer	V3
+Jarak Orang (Ultrasonic)	Gauge / Label	Float	V4
+Status Fingerprint / RFID	Label / Terminal	String	V5 (opsional)
+
+Tambahkan Image Gallery atau Terminal untuk hasil autentikasi RFID/fingerprint (jika digunakan lebih lanjut).
+
+//k
+Fungsi	Widget	Tipe Datastream	Virtual Pin
+Deteksi Api (Flame)	LED / Label	Integer (0/1)	V0
+Kadar Gas (MQ2)	Gauge / Label	Integer	V1
+Temperatur Udara (DHT)	Gauge / Label	Float	V2
+Status Pompa	LED / Value Display	Integer	V3
+
+Tambahkan Notification untuk memberi peringatan darurat, dan Email jika ingin sistem notifikasi melalui email Blynk.
