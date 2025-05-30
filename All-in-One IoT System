@@ -1,0 +1,207 @@
+// kebakaran
+
+#define BLYNK_TEMPLATE_ID "TMPLxxx"
+#define BLYNK_TEMPLATE_NAME "KEBAKARAN"
+#define BLYNK_AUTH_TOKEN "xxxxx"
+
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+#include <DHT.h>
+
+char auth[] = BLYNK_AUTH_TOKEN;
+char ssid[] = "dedek";
+char pass[] = "23456789";
+
+#define FLAME_PIN     D2
+#define RELAY_PIN     D3
+#define DHT_PIN       D4
+#define MQ_PIN        A0
+#define BUZZER_PIN    D5
+#define LED_PIN       D6
+
+#define DHTTYPE DHT11
+DHT dht(DHT_PIN, DHTTYPE);
+
+const int BATAS_SUHU = 50;
+const int BATAS_GAS = 300;
+
+BlynkTimer timer;
+
+void sendSensorData() {
+  int flame = digitalRead(FLAME_PIN);
+  float suhu = dht.readTemperature();
+  int gas = analogRead(MQ_PIN);
+
+  Blynk.virtualWrite(V0, suhu);
+  Blynk.virtualWrite(V1, gas);
+  Blynk.virtualWrite(V2, flame == LOW ? 1 : 0);
+
+  if (flame == LOW || suhu >= BATAS_SUHU || gas > BATAS_GAS) {
+    digitalWrite(BUZZER_PIN, HIGH);
+    digitalWrite(LED_PIN, HIGH);
+    digitalWrite(RELAY_PIN, HIGH);
+    Blynk.logEvent("kebakaran", "🔥 Kebakaran terdeteksi!");
+  } else {
+    digitalWrite(BUZZER_PIN, LOW);
+    digitalWrite(LED_PIN, LOW);
+    digitalWrite(RELAY_PIN, LOW);
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  Blynk.begin(auth, ssid, pass);
+
+  pinMode(FLAME_PIN, INPUT);
+  pinMode(RELAY_PIN, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(LED_PIN, OUTPUT);
+
+  dht.begin();
+
+  timer.setInterval(2000L, sendSensorData);
+}
+
+void loop() {
+  Blynk.run();
+  timer.run();
+}
+
+// farming
+
+#define BLYNK_TEMPLATE_ID "TMPLxxx"
+#define BLYNK_TEMPLATE_NAME "SMART FARMING"
+#define BLYNK_AUTH_TOKEN "xxxxx"
+
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+#include <DHT.h>
+
+char auth[] = BLYNK_AUTH_TOKEN;
+char ssid[] = "dedek";
+char pass[] = "23456789";
+
+#define DHT_PIN     D2
+#define RELAY_PIN   D3
+#define LDR_PIN     A0
+#define SOIL_PIN    A1
+
+#define DHTTYPE DHT11
+DHT dht(DHT_PIN, DHTTYPE);
+
+const int BATAS_KELEMBAPAN_TANAH = 500;
+
+BlynkTimer timer;
+
+void sendSensorData() {
+  float suhu = dht.readTemperature();
+  float kelembaban = dht.readHumidity();
+  int cahaya = analogRead(LDR_PIN);
+  int tanah = analogRead(SOIL_PIN);
+
+  Blynk.virtualWrite(V0, suhu);
+  Blynk.virtualWrite(V1, kelembaban);
+  Blynk.virtualWrite(V2, cahaya);
+  Blynk.virtualWrite(V3, tanah);
+
+  if (tanah > BATAS_KELEMBAPAN_TANAH) {
+    digitalWrite(RELAY_PIN, HIGH);
+    Blynk.virtualWrite(V4, "Pompa ON");
+  } else {
+    digitalWrite(RELAY_PIN, LOW);
+    Blynk.virtualWrite(V4, "Pompa OFF");
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  Blynk.begin(auth, ssid, pass);
+  pinMode(RELAY_PIN, OUTPUT);
+  dht.begin();
+  timer.setInterval(2000L, sendSensorData);
+}
+
+void loop() {
+  Blynk.run();
+  timer.run();
+}
+
+// home
+
+#define BLYNK_TEMPLATE_ID "TMPLxxx"
+#define BLYNK_TEMPLATE_NAME "SMART HOME"
+#define BLYNK_AUTH_TOKEN "xxxxx"
+
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+#include <DHT.h>
+#include <Servo.h>
+
+char auth[] = BLYNK_AUTH_TOKEN;
+char ssid[] = "dedek";
+char pass[] = "23456789";
+
+#define DHT_PIN      D2
+#define LDR_PIN      A0
+#define SERVO_PIN    D3
+#define TRIG_PIN     D4
+#define ECHO_PIN     D5
+
+#define DHTTYPE DHT11
+DHT dht(DHT_PIN, DHTTYPE);
+Servo pintu;
+
+BlynkTimer timer;
+
+long durasi;
+int jarak;
+
+void ukurJarak() {
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+  durasi = pulseIn(ECHO_PIN, HIGH);
+  jarak = durasi * 0.034 / 2;
+}
+
+void sendSensorData() {
+  float suhu = dht.readTemperature();
+  float kelembaban = dht.readHumidity();
+  int cahaya = analogRead(LDR_PIN);
+  ukurJarak();
+
+  Blynk.virtualWrite(V0, suhu);
+  Blynk.virtualWrite(V1, kelembaban);
+  Blynk.virtualWrite(V2, cahaya);
+  Blynk.virtualWrite(V3, jarak);
+}
+
+BLYNK_WRITE(V10) {
+  int buka = param.asInt();
+  if (buka == 1) {
+    Serial.println("Pintu dibuka dari Blynk");
+    pintu.write(90);
+    delay(3000);
+    pintu.write(0);
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  Blynk.begin(auth, ssid, pass);
+  dht.begin();
+  pintu.attach(SERVO_PIN);
+
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  timer.setInterval(2000L, sendSensorData);
+}
+
+void loop() {
+  Blynk.run();
+  timer.run();
+}
+
