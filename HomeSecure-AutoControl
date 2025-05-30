@@ -1,0 +1,199 @@
+//f
+#include <DHT.h>
+#include <BlynkSimpleEsp8266.h>
+
+#define DHTPIN D4
+#define DHTTYPE DHT22
+DHT dht(DHTPIN, DHTTYPE);
+
+#define LDR A0
+#define SOIL A0
+#define RELAY D5
+#define BUZZER D6
+#define LED D7
+
+char auth[] = "BLYNK_AUTH";
+char ssid[] = "WIFI_NAME";
+char pass[] = "WIFI_PASS";
+
+BlynkTimer timer;
+
+BLYNK_WRITE(V4) {
+  digitalWrite(RELAY, param.asInt());
+}
+
+void sendSensor() {
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
+  int ldrVal = analogRead(LDR);
+  int soilVal = analogRead(SOIL);
+
+  Blynk.virtualWrite(V0, t);
+  Blynk.virtualWrite(V1, h);
+  Blynk.virtualWrite(V2, ldrVal);
+  Blynk.virtualWrite(V3, soilVal);
+
+  if (soilVal > 800) {
+    digitalWrite(RELAY, HIGH);
+    digitalWrite(BUZZER, HIGH);
+    digitalWrite(LED, HIGH);
+  } else {
+    digitalWrite(RELAY, LOW);
+    digitalWrite(BUZZER, LOW);
+    digitalWrite(LED, LOW);
+  }
+}
+
+void setup() {
+  Serial.begin(9600);
+  Blynk.begin(auth, ssid, pass);
+  dht.begin();
+
+  pinMode(RELAY, OUTPUT);
+  pinMode(BUZZER, OUTPUT);
+  pinMode(LED, OUTPUT);
+
+  timer.setInterval(3000L, sendSensor);
+}
+
+void loop() {
+  Blynk.run();
+  timer.run();
+}
+
+
+//k
+#include <DHT.h>
+#include <BlynkSimpleEsp8266.h>
+
+#define DHTPIN D3
+#define DHTTYPE DHT22
+DHT dht(DHTPIN, DHTTYPE);
+
+#define FLAME D4
+#define GAS A0
+#define RELAY D5
+#define BUZZER D6
+#define LED D7
+
+char auth[] = "BLYNK_AUTH";
+char ssid[] = "SSID";
+char pass[] = "PASS";
+
+BlynkTimer timer;
+
+void sendSensor() {
+  float t = dht.readTemperature();
+  int flameVal = digitalRead(FLAME);
+  int gasVal = analogRead(GAS);
+
+  Blynk.virtualWrite(V0, flameVal);
+  Blynk.virtualWrite(V1, gasVal);
+  Blynk.virtualWrite(V2, t);
+
+  if (flameVal == LOW || gasVal > 700 || t > 45) {
+    digitalWrite(RELAY, HIGH);
+    digitalWrite(BUZZER, HIGH);
+    digitalWrite(LED, HIGH);
+    Blynk.virtualWrite(V3, 1);
+  } else {
+    digitalWrite(RELAY, LOW);
+    digitalWrite(BUZZER, LOW);
+    digitalWrite(LED, LOW);
+    Blynk.virtualWrite(V3, 0);
+  }
+}
+
+void setup() {
+  Serial.begin(9600);
+  Blynk.begin(auth, ssid, pass);
+  dht.begin();
+
+  pinMode(FLAME, INPUT);
+  pinMode(RELAY, OUTPUT);
+  pinMode(BUZZER, OUTPUT);
+  pinMode(LED, OUTPUT);
+
+  timer.setInterval(3000L, sendSensor);
+}
+
+void loop() {
+  Blynk.run();
+  timer.run();
+}
+
+//h
+#include <Servo.h>
+#include <DHT.h>
+#include <BlynkSimpleEsp8266.h>
+
+#define DHTPIN D4
+#define DHTTYPE DHT22
+DHT dht(DHTPIN, DHTTYPE);
+
+#define LDR A0
+#define TRIG D1
+#define ECHO D2
+#define SERVO_PIN D5
+#define BUZZER D0
+#define LED D3
+
+Servo myServo;
+
+char auth[] = "BLYNK_AUTH";
+char ssid[] = "WIFI";
+char pass[] = "PASSWORD";
+
+BlynkTimer timer;
+
+void sendData() {
+  float t = dht.readTemperature();
+  float h = dht.readHumidity();
+  int light = analogRead(LDR);
+  
+  long dur, dist;
+  digitalWrite(TRIG, LOW); delayMicroseconds(2);
+  digitalWrite(TRIG, HIGH); delayMicroseconds(10); digitalWrite(TRIG, LOW);
+  dur = pulseIn(ECHO, HIGH);
+  dist = dur * 0.034 / 2;
+
+  Blynk.virtualWrite(V0, t);
+  Blynk.virtualWrite(V1, h);
+  Blynk.virtualWrite(V2, light);
+  Blynk.virtualWrite(V4, dist);
+  
+  if (dist < 30) {
+    myServo.write(90);
+    digitalWrite(BUZZER, HIGH);
+    digitalWrite(LED, HIGH);
+  } else {
+    myServo.write(0);
+    digitalWrite(BUZZER, LOW);
+    digitalWrite(LED, LOW);
+  }
+}
+
+BLYNK_WRITE(V3) {
+  int val = param.asInt();
+  myServo.write(val == 1 ? 90 : 0);
+}
+
+void setup() {
+  Serial.begin(9600);
+  Blynk.begin(auth, ssid, pass);
+  dht.begin();
+
+  pinMode(TRIG, OUTPUT);
+  pinMode(ECHO, INPUT);
+  pinMode(BUZZER, OUTPUT);
+  pinMode(LED, OUTPUT);
+
+  myServo.attach(SERVO_PIN);
+
+  timer.setInterval(3000L, sendData);
+}
+
+void loop() {
+  Blynk.run();
+  timer.run();
+}
