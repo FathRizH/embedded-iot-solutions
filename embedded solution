@@ -1,0 +1,154 @@
+KEBAKARAN
+
+#include <DHT.h>
+
+#define FLAME_PIN     2
+#define RELAY_PIN     3
+#define DHT_PIN       4
+#define MQ_PIN        A0
+#define BUZZER_PIN    5
+#define LED_PIN       6
+
+#define DHTTYPE DHT11
+DHT dht(DHT_PIN, DHTTYPE);
+
+const int BATAS_SUHU = 50;
+const int BATAS_GAS = 300;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(FLAME_PIN, INPUT);
+  pinMode(RELAY_PIN, OUTPUT);
+  pinMode(MQ_PIN, INPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(LED_PIN, OUTPUT);
+  dht.begin();
+}
+
+void loop() {
+  int flame = digitalRead(FLAME_PIN);
+  float suhu = dht.readTemperature();
+  int gas = analogRead(MQ_PIN);
+
+  Serial.print("Suhu: "); Serial.print(suhu);
+  Serial.print(" °C | Gas: "); Serial.print(gas);
+  Serial.print(" | Flame: "); Serial.println(flame == LOW ? "DETEKSI API" : "AMAN");
+
+  if (flame == LOW || suhu >= BATAS_SUHU || gas > BATAS_GAS) {
+    digitalWrite(BUZZER_PIN, HIGH);
+    digitalWrite(LED_PIN, HIGH);
+    digitalWrite(RELAY_PIN, HIGH);
+  } else {
+    digitalWrite(BUZZER_PIN, LOW);
+    digitalWrite(LED_PIN, LOW);
+    digitalWrite(RELAY_PIN, LOW);
+  }
+
+  delay(1000);
+}
+
+SMART FARMING
+
+#include <DHT.h>
+
+#define DHT_PIN     2
+#define RELAY_PIN   3
+#define LDR_PIN     A0
+#define SOIL_PIN    A1
+
+#define DHTTYPE DHT11
+DHT dht(DHT_PIN, DHTTYPE);
+
+const int BATAS_KELEMBAPAN_TANAH = 500; // Semakin kecil, semakin basah
+const int BATAS_CAHAYA = 600; // Semakin kecil, semakin terang
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(RELAY_PIN, OUTPUT);
+  dht.begin();
+}
+
+void loop() {
+  float suhu = dht.readTemperature();
+  float kelembaban = dht.readHumidity();
+  int cahaya = analogRead(LDR_PIN);
+  int tanah = analogRead(SOIL_PIN);
+
+  Serial.print("Suhu: "); Serial.print(suhu);
+  Serial.print(" °C | Kelembaban: "); Serial.print(kelembaban);
+  Serial.print(" % | Cahaya: "); Serial.print(cahaya);
+  Serial.print(" | Tanah: "); Serial.println(tanah);
+
+  if (tanah > BATAS_KELEMBAPAN_TANAH) {
+    digitalWrite(RELAY_PIN, HIGH); // Aktifkan pompa
+  } else {
+    digitalWrite(RELAY_PIN, LOW);
+  }
+
+  delay(2000);
+}
+
+SMART HOME
+
+#include <DHT.h>
+#include <Servo.h>
+#include <SoftwareSerial.h>
+
+#define DHT_PIN      2
+#define LDR_PIN      A0
+#define SERVO_PIN    3
+#define TRIG_PIN     4
+#define ECHO_PIN     5
+
+#define DHTTYPE DHT11
+DHT dht(DHT_PIN, DHTTYPE);
+Servo pintu;
+
+// RFID dan Fingerprint pakai SoftwareSerial
+SoftwareSerial rfidSerial(10, 11);    // RFID
+SoftwareSerial fingerSerial(8, 9);    // Fingerprint
+
+long durasi;
+int jarak;
+
+void setup() {
+  Serial.begin(9600);
+  rfidSerial.begin(9600);
+  fingerSerial.begin(9600);
+  dht.begin();
+  pintu.attach(SERVO_PIN);
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+}
+
+void loop() {
+  float suhu = dht.readTemperature();
+  float kelembaban = dht.readHumidity();
+  int cahaya = analogRead(LDR_PIN);
+
+  // Ultrasonik
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+  durasi = pulseIn(ECHO_PIN, HIGH);
+  jarak = durasi * 0.034 / 2;
+
+  Serial.print("Suhu: "); Serial.print(suhu);
+  Serial.print(" °C | Kelembaban: "); Serial.print(kelembaban);
+  Serial.print(" % | LDR: "); Serial.print(cahaya);
+  Serial.print(" | Jarak: "); Serial.println(jarak);
+
+  // Simulasi RFID / Finger print membuka pintu
+  if (rfidSerial.available() > 0 || fingerSerial.available() > 0) {
+    // Jika ada data masuk (kartu / jari valid), buka pintu
+    Serial.println("Akses diterima, membuka pintu...");
+    pintu.write(90); // Buka
+    delay(3000);
+    pintu.write(0); // Tutup
+  }
+
+  delay(1000);
+}
+
